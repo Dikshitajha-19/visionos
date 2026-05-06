@@ -12,12 +12,11 @@ Real-time hand detection and gesture recognition system built with Python, Media
 | 2 · Gestures | Recognises 14 gestures: Hi, Bye, Namaste, Heart, Peace, Thumbs Up/Down, OK, Fist, Rock On, Call Me, Pinky Promise, Pointing, Flying Kiss |
 | 3 · Finger Counter | Counts total extended fingers across up to 2 hands (max 10) |
 | 4 · Rock Paper Scissors | Play vs AI — 3-second countdown, AI picks randomly, winner displayed |
-| 5 · Shape Guesser | Draw any shape, AI auto-identifies it: Circle, Triangle, Square, Rectangle, Pentagon, Hexagon, Star, Ellipse, Octagon & more |
-| 6 · Face Puzzle | Frame any area with two hands, hold still 2 s to auto-capture, then drag tiles with a pinch gesture to solve |
+| 5 · Face Puzzle | Frame any area with two hands, hold still 2 s to auto-capture, then drag tiles with a pinch gesture to solve |
+| 6 · Shape Guesser | Draw any shape, AI auto-identifies it: Circle, Triangle, Square, Rectangle, Pentagon, Hexagon, Star, Ellipse, Octagon & more |
 
 **Bonus features implemented:**
 - Skeleton view, bounding box view, or both (toggle in UI)
-- Recording — capture and download a `.webm` video of any session
 - Multi-hand support (up to 2 hands simultaneously)
 - Hand tracking across frames via MediaPipe
 
@@ -75,10 +74,10 @@ visionos/
 
 | Tool | How it was used |
 |------|----------------|
-| Claude (Anthropic) | Architecture design, all code generation, debugging MediaPipe API version differences, iterative fixes based on real runtime errors |
+| Claude (Anthropic) | Used for guidance on implementation approaches, also helped in code writing, debugging suggestions, and resolving MediaPipe-related issues |
 
-All AI-generated code was validated by running it, reading every error, and prompting targeted fixes — no code was accepted blindly.
-
+AI assistance was used selectively for problem-solving and learning.  
+The system design, integration, testing, and final implementation decisions were independently handled and validated through hands-on development.
 ---
 
 ## Challenges
