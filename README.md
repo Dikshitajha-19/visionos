@@ -3,11 +3,22 @@
 Real-time hand detection and gesture recognition system built with Python, MediaPipe, OpenCV, and Flask.
 
 ---
+## screenshot
+<img width="1781" height="1232" alt="Screenshot 2026-05-06 205229" src="https://github.com/user-attachments/assets/3a5e9e51-0780-43c0-ada6-44419c458cab" />
+<img width="1112" height="1317" alt="Screenshot (122)" src="https://github.com/user-attachments/assets/4d6eb9f3-613d-4a5f-a199-4db6486ac425" />
+<img width="1566" height="1253" alt="Screenshot (120)" src="https://github.com/user-attachments/assets/72754780-9de8-454a-aedf-a2b68114d946" />
+<img width="927" height="1302" alt="Screenshot (124)" src="https://github.com/user-attachments/assets/189ae46b-5a44-4ed7-a4bd-1b9b3ab268a0" />
+<img width="1646" height="1239" alt="Screenshot (125)" src="https://github.com/user-attachments/assets/94d5871f-eca4-4a0d-9885-1daf43c89fae" />
+<img width="1582" height="1341" alt="Screenshot (126)" src="https://github.com/user-attachments/assets/dc553fee-ce6c-420a-ab27-eae7ac0efd28" />
+<img width="1936" height="1317" alt="Screenshot 2026-05-06 211621" src="https://github.com/user-attachments/assets/f7354afb-590b-4447-9437-33f0b9bef97f" />
+
+
 
 ## Features
 
 | Mode | Description |
 |------|-------------|
+
 | 1 · AirDraw | Draw neon lines in the air with your index finger. Palm clears, fist pauses. Change colour with the button. |
 | 2 · Gestures | Recognises 14 gestures: Hi, Bye, Namaste, Heart, Peace, Thumbs Up/Down, OK, Fist, Rock On, Call Me, Pinky Promise, Pointing, Flying Kiss |
 | 3 · Finger Counter | Counts total extended fingers across up to 2 hands (max 10) |
@@ -22,8 +33,15 @@ Real-time hand detection and gesture recognition system built with Python, Media
 
 ---
 
-## Setup
+## ⚠️ Camera Initialization Note
 
+When you start the application, the camera and hand detection model may take **3–4 minutes** to fully initialize, especially on the first run.
+
+Please be patient and wait until the video feed appears before interacting with the system.
+
+**Do not refresh or restart the app during this time.**
+
+## Setup
 ### Requirements
 - Python 3.11 (mediapipe does not support Python 3.12/3.13)
 - Webcam
