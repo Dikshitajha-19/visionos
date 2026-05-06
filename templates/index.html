@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisionOS — Hand Gesture Control</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #080c14;
+    color: #dde8f0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: 8px;
+    background: linear-gradient(90deg, #00ffc8, #00aaff, #cc66ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 18px #00ffc855);
+  }
+  .header p {
+    font-size: 0.75rem;
+    letter-spacing: 4px;
+    color: #3a4a55;
+    margin-top: 4px;
+  }
+
+  /* ── MODES BAR ── */
+  .modes {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .mode-btn {
+    padding: 9px 16px;
+    border: 1px solid #1e2a35;
+    border-radius: 8px;
+    background: #0e141c;
+    color: #556070;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .mode-btn:hover { border-color: #00ffc8; color: #00ffc8; }
+
+  .mode-btn.active { color: #000 !important; font-weight: 700; }
+  .mode-btn[data-mode="1"].active { background:#00ffc8; border-color:#00ffc8; box-shadow:0 0 16px #00ffc855; }
+  .mode-btn[data-mode="2"].active { background:#6688ff; border-color:#6688ff; box-shadow:0 0 16px #6688ff55; }
+  .mode-btn[data-mode="3"].active { background:#ffe066; border-color:#ffe066; box-shadow:0 0 16px #ffe06655; }
+  .mode-btn[data-mode="4"].active { background:#ff9933; border-color:#ff9933; box-shadow:0 0 16px #ff993355; }
+  .mode-btn[data-mode="5"].active { background:#cc77ff; border-color:#cc77ff; box-shadow:0 0 16px #cc77ff55; }
+  .mode-btn[data-mode="6"].active { background:#55ccff; border-color:#55ccff; box-shadow:0 0 16px #55ccff55; }
+
+  /* ── VIDEO ── */
+  .video-wrapper {
+    position: relative;
+    border: 1px solid #1a2535;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 50px #00ffc81a, 0 0 0 1px #00ffc811;
+    margin-bottom: 14px;
+    width: 640px;
+    max-width: 100%;
+    background: #080c14;
+  }
+  #videoFeed {
+    width: 640px;
+    max-width: 100%;
+    display: block;
+  }
+  .placeholder {
+    width: 640px;
+    max-width: 100%;
+    height: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #222d38;
+  }
+  .placeholder .cam-icon { font-size: 4rem; opacity: 0.4; }
+  .placeholder .cam-text { font-size: 0.85rem; letter-spacing: 3px; }
+  .placeholder .cam-sub  { font-size: 0.7rem; color: #1a2530; letter-spacing: 1px; }
+
+  /* Corner deco */
+  .video-wrapper::before, .video-wrapper::after,
+  .video-wrapper .corner-bl, .video-wrapper .corner-br {
+    content: '';
+    position: absolute;
+    width: 18px; height: 18px;
+    border-color: #00ffc855;
+    border-style: solid;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .video-wrapper::before  { top:4px; left:4px;  border-width: 2px 0 0 2px; }
+  .video-wrapper::after   { top:4px; right:4px; border-width: 2px 2px 0 0; }
+  .video-wrapper .corner-bl { bottom:4px; left:4px;  border-width: 0 0 2px 2px; }
+  .video-wrapper .corner-br { bottom:4px; right:4px; border-width: 0 2px 2px 0; }
+
+  /* ── STATUS ── */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: #3a4a55;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #1e2830; transition: all .3s; }
+  .dot.live { background: #00ffc8; box-shadow: 0 0 10px #00ffc8; animation: blink 1.4s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+  .btn {
+    padding: 10px 22px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    transition: all 0.18s;
+  }
+  .btn-start  { background:#00ffc8; color:#000; border-color:#00ffc8; }
+  .btn-start:hover { box-shadow: 0 0 22px #00ffc877; }
+  .btn-start:disabled { opacity:.4; cursor:default; }
+  .btn-stop   { background:#0e141c; color:#ff5555; border-color:#ff5555; }
+  .btn-stop:hover { background:#ff5555; color:#000; }
+  .btn-stop:disabled { opacity:.3; cursor:default; }
+  .btn-action { background:#0e141c; color:#778899; border-color:#1e2a35; }
+  .btn-action:hover { border-color:#00ffc8; color:#00ffc8; }
+
+  /* ── INFO PANEL ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    max-width: 640px;
+    width: 100%;
+    margin-bottom: 14px;
+  }
+  .info-card {
+    background: #0a1018;
+    border: 1px solid #141e28;
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+  .info-card h4 {
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    color: #3a5060;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .info-card p  { font-size: 0.75rem; color: #556677; line-height: 1.7; }
+  .info-card .key { color: #00ffc8; }
+
+  /* RPS Score */
+  .rps-score {
+    display: none;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    max-width: 640px; width: 100%;
+    margin-bottom: 14px;
+  }
+  .score-cell {
+    background: #0a1018;
+    border: 1px solid #141e28;
+    border-radius: 10px;
+    text-align: center;
+    padding: 10px;
+  }
+  .score-cell .val { font-size: 2rem; font-weight: 800; }
+  .score-cell .lbl { font-size: 0.6rem; letter-spacing: 2px; color: #3a5060; margin-top: 2px; }
+  .score-cell.you .val  { color: #00ffc8; }
+  .score-cell.tie .val  { color: #ffe066; }
+  .score-cell.ai  .val  { color: #ff5566; }
+
+  /* ── GESTURE GUIDE ── */
+  .gesture-guide {
+    display: none;
+    max-width: 640px; width: 100%;
+    background: #0a1018;
+    border: 1px solid #141e28;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+  }
+  .gesture-guide h4 {
+    font-size: 0.65rem; letter-spacing: 2px; color: #3a5060;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .gesture-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 6px;
+  }
+  .gesture-item {
+    display: flex; align-items: center; gap: 8px;
+    background: #0d1520; border-radius: 6px;
+    padding: 6px 10px; font-size: 0.72rem;
+  }
+  .gesture-item .g-emoji { font-size: 1.1rem; }
+  .gesture-item .g-name  { color: #00ffc8; font-weight: 600; }
+  .gesture-item .g-desc  { color: #445566; font-size: 0.65rem; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>VISION OS</h1>
+  <p>REAL-TIME HAND GESTURE CONTROL</p>
+</div>
+
+<div class="modes">
+  <button class="mode-btn active" data-mode="1" onclick="setMode(1)">1 · AIRDRAW</button>
+  <button class="mode-btn" data-mode="2" onclick="setMode(2)">2 · ROCK PAPER SCISSORS</button>
+  <button class="mode-btn" data-mode="3" onclick="setMode(3)">3 · FINGER COUNT</button>
+  <button class="mode-btn" data-mode="4" onclick="setMode(4)">4 · SIGN LANGUAGE</button>
+  <button class="mode-btn" data-mode="5" onclick="setMode(5)">5 · FACE PUZZLE</button>
+  <button class="mode-btn" data-mode="6" onclick="setMode(6)">6 · SHAPE GUESSER</button>
+</div>
+
+<div class="video-wrapper">
+  <div class="corner-bl"></div>
+  <div class="corner-br"></div>
+  <div class="placeholder" id="placeholder">
+    <div class="cam-icon">◉</div>
+    <div class="cam-text">AWAITING SIGNAL</div>
+    <div class="cam-sub">Press START to activate camera</div>
+  </div>
+  <img id="videoFeed" src="" alt="" style="display:none;" onerror="handleVideoError()">
+</div>
+
+<div class="status-bar">
+  <div class="dot" id="dot"></div>
+  <span id="statusText">OFFLINE</span>
+</div>
+
+<div class="controls">
+  <button class="btn btn-start" id="btnStart" onclick="startCamera()">▶ START</button>
+  <button class="btn btn-stop"  id="btnStop"  onclick="stopCamera()" disabled>■ STOP</button>
+  <button class="btn btn-action" id="btnAction" onclick="sendAction('space')">SPACE ACTION</button>
+  <button class="btn btn-action" id="btnColor"  onclick="sendAction('color')" style="display:none">🎨 NEXT COLOR</button>
+  <button class="btn btn-action" id="btnReset"  onclick="sendAction('reset_rps')" style="display:none">↺ RESET SCORE</button>
+</div>
+
+<!-- RPS Score (mode 2) -->
+<div class="rps-score" id="rpsScore">
+  <div class="score-cell you"><div class="val" id="sYou">0</div><div class="lbl">YOU</div></div>
+  <div class="score-cell tie"><div class="val" id="sTie">0</div><div class="lbl">TIE</div></div>
+  <div class="score-cell ai"> <div class="val" id="sAI">0</div> <div class="lbl">AI</div></div>
+</div>
+
+<!-- Mode info -->
+<div class="info-grid" id="infoGrid">
+  <div class="info-card">
+    <h4>Current Mode</h4>
+    <p id="modeDesc">Use your <span class="key">index finger</span> to draw neon lines. <span class="key">Open palm</span> clears. <span class="key">Fist</span> pauses drawing.</p>
+  </div>
+  <div class="info-card">
+    <h4>Controls</h4>
+    <p id="modeControls">Keys <span class="key">1–6</span> switch modes · <span class="key">Space</span> = action · <span class="key">C</span> = color</p>
+  </div>
+</div>
+
+<!-- Gesture Guide (mode 4) -->
+<div class="gesture-guide" id="gestureGuide">
+  <h4>Sign Language Gesture Guide</h4>
+  <div class="gesture-grid">
+    <div class="gesture-item"><span class="g-emoji">🙏</span><div><div class="g-name">NAMASTE</div><div class="g-desc">Both palms together</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">👍</span><div><div class="g-name">THUMBS UP</div><div class="g-desc">Only thumb extended</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">✌️</span><div><div class="g-name">PEACE</div><div class="g-desc">Index + Middle up</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">✌️✌️</span><div><div class="g-name">DOUBLE PEACE</div><div class="g-desc">Both hands peace sign</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">✊</span><div><div class="g-name">POWER FIST</div><div class="g-desc">All fingers closed</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">👋</span><div><div class="g-name">HELLO / HI</div><div class="g-desc">Open palm wave</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">👋</span><div><div class="g-name">BYE BYE</div><div class="g-desc">Big open palm + wiggle</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">🤍</span><div><div class="g-name">FINGER HEART</div><div class="g-desc">Thumb + index crossed</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">👌</span><div><div class="g-name">OK SIGN</div><div class="g-desc">Thumb + index circle</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">🤙</span><div><div class="g-name">CALL ME</div><div class="g-desc">Pinky + thumb out</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">☝️</span><div><div class="g-name">POINTING UP</div><div class="g-desc">Only index finger up</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">🤘</span><div><div class="g-name">ROCK ON</div><div class="g-desc">Index + pinky out</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">🤟</span><div><div class="g-name">I LOVE YOU</div><div class="g-desc">Thumb + index + pinky</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">🛑</span><div><div class="g-name">STOP</div><div class="g-desc">All 5 fingers flat open</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">😘</span><div><div class="g-name">FLYING KISS</div><div class="g-desc">Fingers bunched low</div></div></div>
+    <div class="gesture-item"><span class="g-emoji">🖕</span><div><div class="g-name">MIDDLE FINGER</div><div class="g-desc">Only middle up</div></div></div>
+  </div>
+</div>
+
+<script>
+  let currentMode = 1;
+  let isRunning = false;
+  let pollInterval = null;
+
+  const MODE_INFO = {
+    1: {
+      desc: 'Use your <span class="key">index finger</span> to draw neon lines in air. <span class="key">Open palm</span> clears. <span class="key">Fist</span> pauses.',
+      controls: 'Keys <span class="key">1–6</span> switch mode · <span class="key">Space</span> = clear canvas · <span class="key">C</span> = change color'
+    },
+    2: {
+      desc: 'Show <span class="key">✊ Rock</span>, <span class="key">✋ Paper</span>, or <span class="key">✌️ Scissors</span> then press PLAY. AI picks randomly — best of any!',
+      controls: '<span class="key">Space / PLAY button</span> = start 3s countdown · <span class="key">Reset</span> = clear scores'
+    },
+    3: {
+      desc: 'Hold up fingers on <span class="key">one or two hands</span>. System counts all extended fingers and shows total (0–10).',
+      controls: 'Just show your fingers — no button needed!'
+    },
+    4: {
+      desc: 'Show gestures from the guide below. The system recognizes <span class="key">15+ signs</span> including two-hand gestures.',
+      controls: 'Just show gestures to camera! Two hands together = Namaste'
+    },
+    5: {
+      desc: 'Hold <span class="key">both hands</span> out to frame an area. System auto-captures after 1.5s. Then <span class="key">pinch + drag</span> tiles to solve.',
+      controls: '<span class="key">Space</span> = reset puzzle · Pinch fingers to drag tiles'
+    },
+    6: {
+      desc: 'Draw any shape with your <span class="key">index finger</span>. The AI guesses the shape automatically after you stop.',
+      controls: '<span class="key">Fist</span> = guess now · <span class="key">Palm</span> = clear · <span class="key">Space</span> = reset'
+    },
+  };
+
+  function startCamera() {
+    fetch('/start', { method:'POST' }).then(r => r.json()).then(() => {
+      isRunning = true;
+      document.getElementById('placeholder').style.display = 'none';
+      const feed = document.getElementById('videoFeed');
+      feed.style.display = 'block';
+      feed.src = '/video_feed?' + Date.now();
+      document.getElementById('dot').classList.add('live');
+      document.getElementById('statusText').textContent = 'LIVE';
+      document.getElementById('btnStart').disabled = true;
+      document.getElementById('btnStop').disabled = false;
+      startPoll();
+    });
+  }
+
+  function stopCamera() {
+    fetch('/stop', { method:'POST' }).then(r => r.json()).then(() => {
+      isRunning = false;
+      const feed = document.getElementById('videoFeed');
+      feed.style.display = 'none';
+      feed.src = '';
+      document.getElementById('placeholder').style.display = 'flex';
+      document.getElementById('dot').classList.remove('live');
+      document.getElementById('statusText').textContent = 'OFFLINE';
+      document.getElementById('btnStart').disabled = false;
+      document.getElementById('btnStop').disabled = true;
+      clearInterval(pollInterval);
+    });
+  }
+
+  function handleVideoError() {
+    if (isRunning) {
+      setTimeout(() => {
+        const feed = document.getElementById('videoFeed');
+        feed.src = '/video_feed?' + Date.now();
+      }, 800);
+    }
+  }
+
+  function setMode(mode) {
+    currentMode = mode;
+    fetch('/set_mode', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({mode})
+    });
+
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('[data-mode="' + mode + '"]').classList.add('active');
+
+    const info = MODE_INFO[mode];
+    document.getElementById('modeDesc').innerHTML = info.desc;
+    document.getElementById('modeControls').innerHTML = info.controls;
+
+    // Show/hide controls
+    document.getElementById('btnColor').style.display   = mode === 1 ? 'inline-block' : 'none';
+    document.getElementById('btnReset').style.display   = mode === 2 ? 'inline-block' : 'none';
+    document.getElementById('rpsScore').style.display   = mode === 2 ? 'grid' : 'none';
+    document.getElementById('gestureGuide').style.display = mode === 4 ? 'block' : 'none';
+
+    const actionLabels = {
+      1: 'CLEAR CANVAS',
+      2: 'PLAY ROUND ▶',
+      3: 'ACTION',
+      4: 'ACTION',
+      5: 'RESET PUZZLE',
+      6: 'RESET DRAWING',
+    };
+    document.getElementById('btnAction').textContent = actionLabels[mode] || 'ACTION';
+  }
+
+  function sendAction(action) {
+    fetch('/action', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action})
+    });
+  }
+
+  function startPoll() {
+    pollInterval = setInterval(() => {
+      fetch('/status').then(r => r.json()).then(data => {
+        if (data.rps_score) {
+          document.getElementById('sYou').textContent = data.rps_score.player;
+          document.getElementById('sTie').textContent = data.rps_score.ties;
+          document.getElementById('sAI').textContent  = data.rps_score.ai;
+        }
+      }).catch(() => {});
+    }, 1200);
+  }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (e.key >= '1' && e.key <= '6') setMode(parseInt(e.key));
+    if (e.code === 'Space') { e.preventDefault(); sendAction('space'); }
+    if (e.key.toLowerCase() === 'c') sendAction('color');
+  });
+</script>
+</body>
+</html>
